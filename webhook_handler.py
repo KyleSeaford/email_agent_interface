@@ -1,11 +1,19 @@
-from fastapi import FastAPI, Request
-import uvicorn
+# Standard library imports
 import json
-import requests
 import logging
+import os
 import sys
-from json_repair import repair_json
 import unicodedata
+
+# Third-party imports
+from fastapi import FastAPI, Request
+import requests
+import uvicorn
+from dotenv import load_dotenv
+from json_repair import repair_json
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(
@@ -20,8 +28,12 @@ logger = logging.getLogger("webhook_handler")
 
 app = FastAPI(title="Email AI Agent Webhook Handler")
 
-# Langflow API details
-LANGFLOW_API_URL = "http://localhost:7860"  # Change to your Langflow URL
+# Server Configuration
+PORT = int(os.getenv('PORT', '8000'))
+
+# Langflow API details from environment variables
+LANGFLOW_API_URL = os.getenv("LANGFLOW_API_URL")
+LANGFLOW_ENDPOINT = os.getenv("LANGFLOW_ENDPOINT")
 
 # Create a translation table that maps control characters to None
 CONTROL_CHAR_TABLE = str.maketrans("", "", "".join(chr(i) for i in range(32)) + chr(127))
@@ -122,7 +134,7 @@ def process_webhook_item(data):
             logger.info("Sending to Langflow: %s", json.dumps(filtered_data, indent=2))
 
             response = requests.post(
-                f"{LANGFLOW_API_URL}/api/v1/webhook/email_agent_interface",
+                f"{LANGFLOW_API_URL}/api/v1/webhook/{LANGFLOW_ENDPOINT}",
                 json=filtered_data,
                 timeout=10
             )
@@ -145,4 +157,4 @@ async def health_check():
 # Main entry point
 if __name__ == "__main__":
     logger.info("Starting webhook server on port 8000...")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
