@@ -107,9 +107,9 @@ def process_webhook_item(data):
             # Create a filtered payload
             filtered_data = {
                 "to": data.get("to") or data.get("email"),
-                "sender": data.get("sender") or data.get("smtp-id"),
+                "sender": data.get("from") or data.get("smtp-id"),
                 "subject": data.get("subject") or data.get("category", [""])[0],
-                "messageText": data.get("messageText", "") or f"Event: {data.get('event', 'unknown')}",
+                "messageText": data.get("text", "") or f"Event: {data.get('event', 'unknown')}",
                 "messageTimestamp": data.get("messageTimestamp") or data.get("timestamp"),
                 "threadId": data.get("threadId") or data.get("sg_message_id"),
                 "messageId": data.get("messageId") or data.get("sg_event_id")
