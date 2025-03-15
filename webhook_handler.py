@@ -65,7 +65,7 @@ async def webhook(
     try:
         # Log raw request for debugging
         form_data = await request.form()
-        logger.info("Received webhook: %s", json.dumps(form_data, indent=2))
+        logger.info("Received webhook: %s", json.dumps(dict(form_data), indent=2))
 
         # Prepare filtered data structure
         filtered_data = {
