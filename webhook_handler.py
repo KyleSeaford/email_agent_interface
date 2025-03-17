@@ -35,20 +35,25 @@ LANGFLOW_API_URL = os.getenv("LANGFLOW_API_URL")
 LANGFLOW_ENDPOINT = os.getenv("LANGFLOW_ENDPOINT")
 
 # Create a translation table that maps control characters to None
-CONTROL_CHAR_TABLE = str.maketrans("", "", "".join(chr(i) for i in range(32)) + chr(127))
+CONTROL_CHAR_TABLE = str.maketrans("", "", "".join(chr(i) for i in range(32) if i not in [9, 10, 13]) + chr(127))
 
-def clean_json_data(data):
-    """Clean JSON data to ensure it can be properly serialized"""
-    if isinstance(data, dict):
-        return {k: clean_json_data(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [clean_json_data(item) for item in data]
-    elif isinstance(data, str):
-        cleaned = data.translate(CONTROL_CHAR_TABLE)
-        cleaned = unicodedata.normalize("NFC", cleaned)
-        return cleaned
-    else:
-        return data
+def clean_text(text):
+    """Clean text to ensure it can be properly serialized"""
+    if not isinstance(text, str):
+        return text
+
+    # Remove control characters except tabs
+    cleaned = text.translate(CONTROL_CHAR_TABLE)
+
+    # Replace newlines and carriage returns with spaces
+    cleaned = cleaned.replace('\r\n', ' ').replace('\n', ' ').replace('\r', ' ')
+
+    # Replace multiple spaces with a single space
+    cleaned = ' '.join(cleaned.split())
+
+    # Normalize Unicode
+    cleaned = unicodedata.normalize("NFC", cleaned)
+    return cleaned
 
 @app.post("/webhook")
 async def webhook(
@@ -57,7 +62,6 @@ async def webhook(
     sender: str = Form(..., alias="from"),
     subject: str = Form(""),
     text: str = Form(""),
-    html: str = Form(""),
     attachments: int = Form(0),
     attachment1: UploadFile = File(None)
 ):
@@ -67,41 +71,37 @@ async def webhook(
         form_data = await request.form()
         logger.info("Received webhook: %s", json.dumps(dict(form_data), indent=2))
 
-        # Prepare filtered data structure
-        filtered_data = {
-            "to": to,
-            "sender": sender,
-            "subject": subject,
-            "messageText": text or f"HTML Content: {html}",
-            "messageTimestamp": form_data.get("timestamp"),
-            "threadId": form_data.get("sg_message_id"),
-            "messageId": form_data.get("sg_event_id")
+        # Prepare data structure
+        data = {
+            "to": clean_text(to),
+            "sender": clean_text(sender),
+            "subject": clean_text(subject),
+            "text": clean_text(text)
         }
 
         # Process Attachments (if any)
         if attachments > 0 and attachment1:
             attachment_name = attachment1.filename
             logger.info("Received attachment: %s", attachment_name)
-            filtered_data["attachment"] = attachment_name  # Store attachment name
+            data["attachment"] = clean_text(attachment_name)  # Store attachment name
 
-        # Clean and truncate message if too long
-        filtered_data = clean_json_data(filtered_data)
-        if len(filtered_data.get("messageText", "")) > 10000:
-            filtered_data["messageText"] = filtered_data["messageText"][:10000] + "... (truncated)"
+        # Truncate very long messages if needed
+        if len(data.get("text", "")) > 10000:
+            data["text"] = data["text"][:10000] + "... (truncated)"
 
-        # Log the filtered data
-        logger.info("Sending to Langflow: %s", json.dumps(filtered_data, indent=2))
+        # Log the data
+        logger.info("Sending to Langflow: %s", json.dumps(data, indent=2))
 
         # Forward to Langflow
         response = requests.post(
             f"{LANGFLOW_API_URL}/api/v1/webhook/{LANGFLOW_ENDPOINT}",
-            json=filtered_data,
+            json=data,
             timeout=10
         )
 
         logger.info("Forwarded to Langflow, status: %d, response: %s", response.status_code, response.text)
         return {"status": "success"}
-    
+
     except Exception as e:
         logger.error("Error processing webhook: %s", str(e), exc_info=True)
         return {"status": "error", "message": str(e)}
