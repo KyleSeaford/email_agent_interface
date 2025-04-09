@@ -68,36 +68,36 @@ async def webhook(
         }
 
         # Process Attachments (if any)
-        if int(attachments) > 0:
-            logger.info("Attempting to process %s attachments", attachments)
-            attachment_data = []
-
-            for i in range(1, int(attachments) + 1):
-                attachment_key = f"attachment{i}"
-                logger.info("Looking for attachment key: %s", attachment_key)
-                if attachment_key in form_data:
-                    attachment = form_data[attachment_key]
-                    logger.info("Found attachment with type: %s", type(attachment).__name__)
-
-                    # Process the attachment
-                    attachment_info = await process_attachment(
-                        attachment,
-                        attachment_key,
-                        i,
-                        LANGFLOW_FLOW_ID,
-                        LANGFLOW_API_URL
-                    )
-
-                    if attachment_info:
-                        attachment_data.append(attachment_info)
-                else:
-                    logger.warning("Attachment key %s not found in form data", attachment_key)
-
-            if attachment_data:
-                logger.info("Adding %s attachments to data payload", len(attachment_data))
-                data["attachments"] = attachment_data
-            else:
-                logger.warning("No attachments were successfully processed")
+        # if int(attachments) > 0:
+        #     logger.info("Attempting to process %s attachments", attachments)
+        #     attachment_data = []
+        #
+        #     for i in range(1, int(attachments) + 1):
+        #         attachment_key = f"attachment{i}"
+        #         logger.info("Looking for attachment key: %s", attachment_key)
+        #         if attachment_key in form_data:
+        #             attachment = form_data[attachment_key]
+        #             logger.info("Found attachment with type: %s", type(attachment).__name__)
+        #
+        #             # Process the attachment
+        #             attachment_info = await process_attachment(
+        #                 attachment,
+        #                 attachment_key,
+        #                 i,
+        #                 LANGFLOW_FLOW_ID,
+        #                 LANGFLOW_API_URL
+        #             )
+        #
+        #             if attachment_info:
+        #                 attachment_data.append(attachment_info)
+        #         else:
+        #             logger.warning("Attachment key %s not found in form data", attachment_key)
+        #
+        #     if attachment_data:
+        #         logger.info("Adding %s attachments to data payload", len(attachment_data))
+        #         data["attachments"] = attachment_data
+        #     else:
+        #         logger.warning("No attachments were successfully processed")
 
         # Truncate very long messages if needed
         if len(data.get("text", "")) > 10000:
@@ -115,25 +115,23 @@ async def webhook(
         run_payload = {
             "output_type": "chat",
             "input_type": "chat",
+            "session_id": data['sender'],
             "tweaks": {
                 CHAT_INPUT_ID: {
                     # We'll add files here if there are attachments
-                },
-                "TextInput-vLdoS": {
-                    # Empty for now
                 }
             }
         }
 
         # Add file references if we have attachments
-        if "attachments" in data and data["attachments"]:
-            for attachment in data["attachments"]:
-                if attachment.get("uploaded") and attachment.get("langflow_file_id"):
-                    # Make sure the files parameter is correctly formatted
-                    run_payload["tweaks"][CHAT_INPUT_ID]["files"] = attachment["langflow_file_id"]
-                    logger.info("Added file reference to payload: %s", attachment["langflow_file_id"])
-                    # For now, just use the first attachment
-                    break
+        # if "attachments" in data and data["attachments"]:
+        #     for attachment in data["attachments"]:
+        #         if attachment.get("uploaded") and attachment.get("langflow_file_id"):
+        #             # Make sure the files parameter is correctly formatted
+        #             run_payload["tweaks"][CHAT_INPUT_ID]["files"] = attachment["langflow_file_id"]
+        #             logger.info("Added file reference to payload: %s", attachment["langflow_file_id"])
+        #             # For now, just use the first attachment
+        #             break
 
         # Add email metadata as context
         email_context = f"From: {data['sender']}\nTo: {data['to']}\nSubject: {data['subject']}\n\n"
@@ -154,7 +152,7 @@ async def webhook(
             headers,
             run_payload
         )
-        
+
         return {"status": "accepted"}
 
     except Exception as e:
