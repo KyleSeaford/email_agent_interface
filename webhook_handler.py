@@ -31,9 +31,14 @@ from text_utils import clean_text
 # Load environment variables
 load_dotenv()
 
+# Configure logging level based on environment variable
+LOG_LEVEL_STR = os.getenv("LOG_LEVEL", "INFO").upper()
+# Map string level to logging constant, default to INFO if invalid
+LOG_LEVEL = getattr(logging, LOG_LEVEL_STR, logging.INFO)
+
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=LOG_LEVEL, # Use the level from env var
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler("webhook.log"),
@@ -41,6 +46,8 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger("webhook_handler")
+# Log the effective logging level
+logger.info("Logging level set to: %s", logging.getLevelName(LOG_LEVEL))
 
 app = FastAPI(title="Email AI Agent Webhook Handler")
 
@@ -119,8 +126,8 @@ async def webhook(
         else:
              # Clean the extracted reply
             reply_text = clean_text(reply_text)
-            logger.info("Extracted reply text. Original length: %d, Reply length: %d",
-                        len(data['text']), len(reply_text))
+            # Use lazy formatting for log message (changed message slightly)
+            logger.info("Extracted reply text (length: %d)", len(reply_text))
         # < --- End Extract Reply Only ---
 
         # --- Determine Thread ID --- >
@@ -237,7 +244,8 @@ async def webhook(
         }
         if LANGFLOW_API_KEY:
             langflow_headers['x-api-key'] = LANGFLOW_API_KEY
-            logger.info("Adding x-api-key header to Langflow request.")
+            # Downgrade to DEBUG
+            logger.debug("Adding x-api-key header to Langflow request.")
 
         # < --- End Prepare Langflow Payload ---
 
@@ -264,7 +272,8 @@ async def send_to_langflow(url: str, headers: dict, payload: dict):
     """Send request to Langflow API in the background."""
     try:
         async with aiohttp.ClientSession() as session:
-            logger.info("Sending run payload to Langflow: %s",
+            # Use lazy formatting for log message - Downgraded to DEBUG
+            logger.debug("Sending run payload to Langflow: %s",
                         json.dumps(payload, indent=2))
             timeout = aiohttp.ClientTimeout(total=120)
             async with session.post(
@@ -274,8 +283,11 @@ async def send_to_langflow(url: str, headers: dict, payload: dict):
                 timeout=timeout
             ) as response:
                 response_text = await response.text()
+                # Truncate potentially long response text for INFO log
+                truncated_response = (response_text[:500] + '...') if len(response_text) > 500 else response_text
+                # Use lazy formatting for log message
                 logger.info("Forwarded to Langflow, status: %d, response: %s",
-                           response.status, response_text)
+                           response.status, truncated_response)
                 response.raise_for_status() # Raise exception for bad status codes
     except aiohttp.ClientError as e:
         logger.error("HTTP Client Error sending to Langflow: %s", e)
