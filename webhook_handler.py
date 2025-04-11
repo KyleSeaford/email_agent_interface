@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import sys
+from email.parser import HeaderParser
 
 # Third-party imports
 from fastapi import FastAPI, Request, Form
@@ -39,6 +40,8 @@ LANGFLOW_API_URL = os.getenv("LANGFLOW_API_URL")
 LANGFLOW_ENDPOINT = os.getenv("LANGFLOW_ENDPOINT")
 LANGFLOW_FLOW_ID = os.getenv("LANGFLOW_FLOW_ID")
 CHAT_INPUT_ID = os.getenv("CHAT_INPUT_ID")
+# Optional Langflow API Key for secured endpoints
+LANGFLOW_API_KEY = os.getenv("LANGFLOW_API_KEY")
 
 @app.post("/webhook")
 async def webhook(
@@ -48,6 +51,7 @@ async def webhook(
     sender: str = Form(..., alias="from"),
     subject: str = Form(""),
     text: str = Form(""),
+    headers: str = Form(""),
     attachments: int = Form(0)
 ):
     """Handle incoming email webhook from SendGrid"""
@@ -66,6 +70,42 @@ async def webhook(
             "subject": clean_text(subject),
             "text": clean_text(text)
         }
+
+        # --- Determine Thread ID ---
+        parser = HeaderParser()
+        parsed_headers = parser.parsestr(headers)
+
+        message_id = parsed_headers.get('Message-ID', '').strip('<>')
+        in_reply_to = parsed_headers.get('In-Reply-To', '').strip('<>')
+        references_header = parsed_headers.get('References', '')
+
+        thread_id = None
+        if references_header:
+            # The first ID in References is often the root of the thread
+            try:
+                thread_id = references_header.split()[0].strip('<>')
+            except IndexError:
+                logger.warning("References header format unexpected: %s", references_header)
+        elif in_reply_to:
+            # Fallback to In-Reply-To if References is not present or invalid
+            thread_id = in_reply_to
+        elif message_id:
+            # If it's a new email, use its own Message-ID as the thread ID
+            thread_id = message_id
+
+        # Final fallback if no suitable header is found
+        if not thread_id:
+            logger.warning("Could not determine thread ID from headers, falling back to sender.")
+            thread_id = data.get('sender')
+
+        # Ensure thread_id is never None or empty before sending
+        if not thread_id:
+            logger.error("Critical: Could not determine a valid thread_id. Headers: %s", headers)
+            # Using a placeholder to prevent errors, but this case should be investigated
+            thread_id = f"unknown_thread_{data.get('sender', 'unknown_sender')}"
+
+        logger.info(f"Using Thread ID (Session ID): {thread_id}")
+        # --- End Determine Thread ID ---
 
         # Process Attachments (if any)
         # if int(attachments) > 0:
@@ -133,8 +173,13 @@ async def webhook(
         #             # For now, just use the first attachment
         #             break
 
-        # Add email metadata as context
-        email_context = f"From: {data['sender']}\nTo: {data['to']}\nSubject: {data['subject']}\n\n"
+        # Add email metadata as context, including the thread ID
+        email_context = (
+            f"From: {data['sender']}\n"
+            f"To: {data['to']}\n"
+            f"Subject: {data['subject']}\n"
+            f"Thread ID: {thread_id}\n\n"
+        )
         # Only set input_value at the top level
         run_payload["input_value"] = email_context + data["text"]
 
@@ -142,6 +187,10 @@ async def webhook(
         headers = {
             'Content-Type': 'application/json'
         }
+        # Add Langflow API key header if it exists
+        if LANGFLOW_API_KEY:
+            headers['x-api-key'] = LANGFLOW_API_KEY
+            logger.info("Adding x-api-key header to Langflow request.")
 
         logger.info("Sending run payload to Langflow: %s", json.dumps(run_payload, indent=2))
 
@@ -164,7 +213,7 @@ async def send_to_langflow(url, headers, payload):
     try:
         async with aiohttp.ClientSession() as session:
             logger.info("Sending run payload to Langflow: %s", json.dumps(payload, indent=2))
-            
+
             async with session.post(
                 url,
                 headers=headers,
