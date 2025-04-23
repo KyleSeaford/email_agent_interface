@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<title>Webhook Handler Functions Mindmap</title>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+}
+#mindmap {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/markmap-toolbar@0.18.10/dist/style.css">
+</head>
+<body>
+<svg id="mindmap"></svg>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script><script src="https://cdn.jsdelivr.net/npm/markmap-view@0.18.10/dist/browser/index.js"></script><script src="https://cdn.jsdelivr.net/npm/markmap-toolbar@0.18.10/dist/index.js"></script><script>((r) => {
+          setTimeout(r);
+        })(() => {
+  const { markmap, mm } = window;
+  const toolbar = new markmap.Toolbar();
+  toolbar.attach(mm);
+  const el = toolbar.render();
+  el.setAttribute("style", "position:absolute;bottom:20px;right:20px");
+  document.body.append(el);
+})</script><script>((getMarkmap, getOptions, root2, jsonOptions) => {
+              const markmap = getMarkmap();
+              window.mm = markmap.Markmap.create(
+                "svg#mindmap",
+                (getOptions || markmap.deriveOptions)(jsonOptions),
+                root2
+              );
+            })(() => window.markmap,null,{"content":"Webhook Handler Functions","children":[{"content":"Main Functions","children":[{"content":"webhook (POST /webhook)","children":[{"content":"<strong>Inputs:</strong>","children":[{"content":"request: Request","children":[]},{"content":"background_tasks: BackgroundTasks","children":[]},{"content":"to: str (Form)","children":[]},{"content":"sender: str (Form, alias=\"from\")","children":[]},{"content":"subject: str (Form)","children":[]},{"content":"text: str (Form)","children":[]},{"content":"headers: str (Form)","children":[]},{"content":"attachments: int (Form)","children":[]}],"payload":{"tag":"li"}},{"content":"<strong>Processing:</strong>","children":[{"content":"Parses email headers","children":[]},{"content":"Extracts reply text","children":[]},{"content":"Determines thread ID","children":[]},{"content":"Handles attachments (currently disabled)","children":[]},{"content":"Prepares Langflow payload","children":[]}],"payload":{"tag":"li"}},{"content":"<strong>Output:</strong>","children":[{"content":"{\"status\": \"accepted\"} on success","children":[]},{"content":"{\"status\": \"error\", \"message\": \"Internal server error\"} on failure","children":[]}],"payload":{"tag":"li"}}]},{"content":"send_to_langflow (async)","children":[{"content":"<strong>Inputs:</strong>","children":[{"content":"url: str","children":[]},{"content":"headers: dict","children":[]},{"content":"payload: dict","children":[]}],"payload":{"tag":"li"}},{"content":"<strong>Processing:</strong>","children":[{"content":"Makes async HTTP POST request to Langflow","children":[]},{"content":"Handles timeouts and errors","children":[]}],"payload":{"tag":"li"}},{"content":"<strong>Output:</strong>","children":[{"content":"No direct return (background task)","children":[]},{"content":"Logs success/failure","children":[]}],"payload":{"tag":"li"}}]},{"content":"health_check (GET /health)","children":[{"content":"<strong>Inputs:</strong> None","children":[]},{"content":"<strong>Processing:</strong> Simple health status check","children":[]},{"content":"<strong>Output:</strong> {\"status\": \"healthy\"}","children":[]}]}]},{"content":"Supporting Functions","children":[{"content":"clean_text (imported)","children":[]},{"content":"process_attachment (imported, currently unused)","children":[]}]},{"content":"Key Environment Variables","children":[{"content":"LOG_LEVEL","children":[]},{"content":"PORT","children":[]},{"content":"LANGFLOW_API_URL","children":[]},{"content":"LANGFLOW_ENDPOINT","children":[]},{"content":"LANGFLOW_FLOW_ID","children":[]},{"content":"CHAT_INPUT_ID","children":[]},{"content":"LANGFLOW_API_KEY","children":[]}]}]})</script>
+</body>
+</html> 
