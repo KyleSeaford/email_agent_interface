@@ -139,7 +139,7 @@ class DatasetDefinitions:
                 "The cell is the smallest unit of life."
             )
         ]
-    
+
     @staticmethod
     def history() -> List[Tuple[str, str]]:
         """
@@ -191,5 +191,35 @@ class DatasetDefinitions:
             (
                 "What is the first book in J.K. Rowling's wizarding series?",
                 "Harry Potter and the Philosopher's Stone (or Sorcerer's Stone in the US) is the first book."
+            )
+        ]
+
+    @staticmethod
+    def github_user_knowledge() -> List[Tuple[str, str]]:
+        """
+        Example Q&A pairs about GitHub users, using only anonymized and generic data.
+        Returns:
+            List of (question, answer) tuples
+        """
+        return [
+            (
+                "What are some programming languages a GitHub user might use?",
+                "A GitHub user might use languages such as Python, JavaScript, HTML, CSS, and Go."
+            ),
+            (
+                "How many repositories can a typical GitHub user have?",
+                "A typical GitHub user can have anywhere from a few to hundreds of repositories."
+            ),
+            (
+                "Which languages are common among open source contributors?",
+                "Common languages among open source contributors include Python, JavaScript, TypeScript, and Java."
+            ),
+            (
+                "Can a GitHub user have no repositories?",
+                "Yes, a GitHub user can have an account without any repositories."
+            ),
+            (
+                "What is a possible way to find out which languages a user works with?",
+                "You can look at the languages listed in their public repositories on GitHub."
             )
         ]
