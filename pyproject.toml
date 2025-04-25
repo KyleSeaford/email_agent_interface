@@ -1,0 +1,11 @@
+[tool.flake8]
+ignore = ["E722"]  # Ignore broad exception warnings
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = ["broad-except"]  # Disable broad exception warnings
+
+[tool.ruff]
+ignore = ["E722"]  # Ignore broad exception warnings
+
+[tool.pycodestyle]
+ignore = ["E722"]  # Ignore broad exception warnings 

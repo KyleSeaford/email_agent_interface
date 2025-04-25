@@ -119,4 +119,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         send_single_test_email(sys.argv[1])
     else:
-        send_all_test_emails() 
+        send_all_test_emails()

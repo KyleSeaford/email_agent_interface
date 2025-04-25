@@ -1,5 +1,4 @@
 """Webhook handler for processing inbound emails via SendGrid's Inbound Parse.
-
 Receives email data (sender, recipient, subject, text, headers, attachments)
 via a POST request, extracts relevant information, parses email threads,
 removes quoted reply history, and forwards the cleaned data and context
@@ -25,7 +24,7 @@ from fastapi import FastAPI, Form, Request
 from fastapi.background import BackgroundTasks
 
 # Local application imports
-from attach import process_attachment # Currently unused due to commented code
+#from attach import process_attachment # Currently unused due to commented code
 from text_utils import clean_text
 
 # Load environment variables
@@ -57,8 +56,8 @@ PORT = int(os.getenv('PORT', '8000'))
 # Langflow API details from environment variables
 LANGFLOW_API_URL = os.getenv("LANGFLOW_API_URL")
 LANGFLOW_ENDPOINT = os.getenv("LANGFLOW_ENDPOINT")
-LANGFLOW_FLOW_ID = os.getenv("LANGFLOW_FLOW_ID")
-CHAT_INPUT_ID = os.getenv("CHAT_INPUT_ID") # Used in attachment file tweak
+#LANGFLOW_FLOW_ID = os.getenv("LANGFLOW_FLOW_ID") # Used in attachment file tweak
+#CHAT_INPUT_ID = os.getenv("CHAT_INPUT_ID") # Used in attachment file tweak
 # Optional Langflow API Key for secured endpoints
 LANGFLOW_API_KEY = os.getenv("LANGFLOW_API_KEY")
 
@@ -71,7 +70,7 @@ async def webhook(
     subject: str = Form(""),
     text: str = Form(""),
     headers: str = Form(""), # Raw headers string from SendGrid
-    attachments: int = Form(0) # Number of attachments claimed by SendGrid
+    #attachments: int = Form(0) # Number of attachments claimed by SendGrid
 ):
     """Handle incoming email webhook from SendGrid Inbound Parse."""
     try:
@@ -102,7 +101,7 @@ async def webhook(
                 message_id = parsed_headers.get('Message-ID', '').strip('<>')
                 in_reply_to = parsed_headers.get('In-Reply-To', '').strip('<>')
                 references_header = parsed_headers.get('References', '')
-            except Exception as e:
+            except Exception as e:  # noqa: E722
                 logger.error("HeaderParser failed to parse headers: %s", e,
                              exc_info=True)
 
@@ -140,7 +139,7 @@ async def webhook(
                 else:
                     logger.warning("References header found but no IDs: %s",
                                  references_header)
-            except Exception as e:
+            except Exception as e:  # noqa: E722
                 logger.warning("Error parsing References header '%s': %s", references_header, e)
         elif in_reply_to:
             thread_id = in_reply_to
@@ -262,7 +261,7 @@ async def webhook(
         # Respond immediately to SendGrid
         return {"status": "accepted"}
 
-    except Exception as e:
+    except Exception as e:  # noqa: E722
         # Log any unexpected errors during webhook processing
         logger.error("Unhandled error processing webhook: %s", e, exc_info=True)
         # Return an error status, but avoid leaking internal details
@@ -272,7 +271,6 @@ async def send_to_langflow(url: str, headers: dict, payload: dict):
     """Send request to Langflow API in the background."""
     try:
         async with aiohttp.ClientSession() as session:
-            # Use lazy formatting for log message - Downgraded to DEBUG
             logger.debug("Sending run payload to Langflow: %s",
                         json.dumps(payload, indent=2))
             timeout = aiohttp.ClientTimeout(total=120)
@@ -284,14 +282,17 @@ async def send_to_langflow(url: str, headers: dict, payload: dict):
             ) as response:
                 response_text = await response.text()
                 # Truncate potentially long response text for INFO log
-                truncated_response = (response_text[:500] + '...') if len(response_text) > 500 else response_text
-                # Use lazy formatting for log message
+                truncated_response = (
+                    response_text[:500] + '...' if len(response_text) > 500 
+                    else response_text
+                )
+
                 logger.info("Forwarded to Langflow, status: %d, response: %s",
                            response.status, truncated_response)
                 response.raise_for_status() # Raise exception for bad status codes
     except aiohttp.ClientError as e:
         logger.error("HTTP Client Error sending to Langflow: %s", e)
-    except Exception as e:
+    except Exception as e:  # noqa: E722
         logger.error("Error in background task sending to Langflow: %s", e,
                      exc_info=True)
 
