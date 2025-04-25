@@ -6,9 +6,18 @@ A FastAPI-based webhook handler that transforms email into a natural interface f
 
 Want to interact with our AI agent? It's as simple as sending an email:
 
-📧 **Email Address:** [`langflow@email-agent.ai`](mailto:langflow@email-agent.ai)
+📧 **Email Address:** [`langflow-bot@email-agent.ai`](mailto:langflow-bot@email-agent.ai)
 
 The service will process your email and respond with an AI-generated reply. Try asking questions, requesting analysis, or starting a conversation!
+
+## 🤖 What Can You Ask?
+
+Our AI email interface can handle various types of requests. Simply send your email to [`langflow-bot@email-agent.ai`](mailto:langflow-bot@email-agent.ai) for any of these capabilities:
+
+- 🛍️ **Deals and Shopping** - Find the latest deals and compare prices across retailers
+- ✈️ **Travel Planning** - Get personalized recommendations for restaurants, activities, and locations with map links
+- 💹 **Financial Information** - Track company performance and market trends in real-time
+- 📚 **Research Assistant** - Get comprehensive analysis on academic or technical topics
 
 ```
                     Email AI Agent Interface
