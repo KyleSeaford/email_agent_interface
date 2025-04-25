@@ -1,6 +1,8 @@
 # ✉️ Email as an AI Interface Webhook Handler 🤖 ⚡️
-
 A FastAPI-based webhook handler that transforms email into a natural interface for AI interaction. Using [SendGrid's Inbound Parse](https://docs.sendgrid.com/for-developers/parsing-email/inbound-email), it enables users to communicate with a [Langflow](https://langflow.org) AI agent through their regular email client.
+
+![Langflow AI Flow](docs/images/langflow_ai_flow.png)
+*The Langflow AI agent configuration showing the email processing and response generation flow*
 
 ## ✨ Try It Now!
 
