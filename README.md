@@ -1,83 +1,201 @@
-# Email AI Agent Webhook Handler
+# ✉️ Email as an AI Interface Webhook Handler 🤖 ⚡️
 
-A FastAPI-based webhook handler that processes email notifications from GitHub and forwards them to a Langflow AI agent.
+A FastAPI-based webhook handler that transforms email into a natural interface for AI interaction. Using [SendGrid's Inbound Parse](https://docs.sendgrid.com/for-developers/parsing-email/inbound-email), it enables users to communicate with a [Langflow](https://langflow.org) AI agent through their regular email client.
+
+## ✨ Try It Now!
+
+Want to interact with our AI agent? It's as simple as sending an email:
+
+📧 **Email Address:** [`langflow@email-agent.ai`](mailto:langflow@email-agent.ai)
+
+The service will process your email and respond with an AI-generated reply. Try asking questions, requesting analysis, or starting a conversation!
+
+```
+                    Email AI Agent Interface
+                    
+                         .----------.
+                        /          /|
+                       /  EMAIL   / |
+                      /   /@\    /  |
+                     .----------.   |
+                     |          |   |
+                     |          |  /
+                     |          | /
+                     .----------.
+                           |
+                           v
+                    +--------------+
+                    |   WEBHOOK    |
+                    |   HANDLER    |---> [Parse]
+                    |              |---> [Clean]
+                    +--------------+---> [Extract]
+                           |
+                           v
+                    +--------------+
+                    |  AI AGENT    |====> Natural
+                    |  PROCESSOR   |====> Language
+                    |     </>      |====> Response
+                    +--------------+
+                           |
+                           v
+                    [ Smart Response ]
+```
 
 ## Overview
 
-This service acts as a bridge between GitHub email notifications and your Langflow AI agent. It:
+This service acts as a bridge between [SendGrid's Inbound Parse webhook](https://docs.sendgrid.com/for-developers/parsing-email/inbound-email) and your [Langflow](https://langflow.org) AI agent. It:
 
-1. Receives webhook payloads from GitHub email notifications using Composio triggers
-2. Cleans and sanitizes the JSON data to ensure proper formatting
-3. Extracts relevant information (sender, subject, message text, etc.)
+1. Receives webhook payloads from SendGrid's Inbound Parse
+2. Cleans and sanitizes the email data
+3. Extracts relevant information (sender, subject, message text, thread IDs)
 4. Forwards the cleaned data to a Langflow endpoint for AI processing
+5. 🚧 **Coming Soon:** File attachment handling (images, documents, etc.) - *In Development*
+
+## 🛠 Technology Stack
+
+Our service is built on a modern, robust technology stack:
+
+### Core Technologies
+- [Python 3.12+](https://www.python.org/) - Latest Python version with improved performance and features
+- [FastAPI](https://fastapi.tiangolo.com/) - Modern, fast web framework for building APIs with Python
+- [Langflow](https://langflow.org) - Open-source LangChain Flow implementation for AI agent orchestration
+- [SendGrid](https://sendgrid.com/) - Email delivery and webhook processing platform
+
+### Key Dependencies
+- [email-reply-parser](https://github.com/zapier/email-reply-parser) - Intelligent email thread parsing
+- [python-dotenv](https://github.com/theskumar/python-dotenv) - Environment variable management
+- [uvicorn](https://www.uvicorn.org/) - Lightning-fast ASGI server implementation
+
+### Development Tools
+- [pytest](https://docs.pytest.org/) - Testing framework for robust test coverage
+- [flake8](https://flake8.pycqa.org/) - Code linting and style guide enforcement
+- [black](https://black.readthedocs.io/) - Code formatting for consistent style
+
+## Environment Variables
+
+The following environment variables are required:
+
+- `LOG_LEVEL`: Logging level (default: INFO)
+- `PORT`: Server port (default: 8000)
+- `LANGFLOW_API_URL`: Base URL for Langflow API
+- `LANGFLOW_ENDPOINT`: Specific Langflow endpoint to call
+- `LANGFLOW_API_KEY`: Optional API key for secured endpoints
+
+### Setting Up Environment Variables
+
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Edit the `.env` file with your specific configuration:
+   ```bash
+   # Server Configuration
+   PORT=8000
+   LOG_LEVEL=INFO
+
+   # Langflow Configuration
+   LANGFLOW_API_URL=http://localhost:3000    # Your Langflow instance URL
+   LANGFLOW_ENDPOINT=your-flow-endpoint      # Your specific flow endpoint
+   LANGFLOW_API_KEY=your-api-key             # Optional: Your API key
+   ```
+
+## API Endpoints
+
+### POST /webhook
+
+Receives incoming webhook POST requests from [SendGrid's Inbound Parse](https://docs.sendgrid.com/for-developers/parsing-email/setting-up-the-inbound-parse-webhook).
+
+**Input Fields:**
+- `to`: Recipient email address
+- `sender`: Sender email address (alias: "from")
+- `subject`: Email subject
+- `text`: Email body text
+- `headers`: Raw email headers
+
+**Response:**
+- Success: `{"status": "accepted"}`
+- Error: `{"status": "error", "message": "..."}`
+
+### GET /health
+
+Health check endpoint to verify service status.
+
+**Response:**
+- `{"status": "healthy"}`
 
 ## Features
 
-- **JSON Repair**: Automatically fixes malformed JSON using the `json_repair` library
+- **Email Thread Parsing**: Extracts and tracks email conversation threads using [email-reply-parser](https://github.com/zapier/email-reply-parser)
+- **Reply Extraction**: Intelligently extracts reply content from email chains
 - **Unicode Normalization**: Ensures consistent character encoding
-- **Control Character Removal**: Strips problematic control characters from text
-- **Message Truncation**: Prevents oversized messages from causing issues
-- **Comprehensive Logging**: Detailed logs for debugging and monitoring
+- **Async Processing**: Background task handling using [FastAPI](https://fastapi.tiangolo.com)'s async features
 
 ## Installation
 
 ### Prerequisites
 
-- Python 3.8+
+- Python 3.12+ (developed and tested with Python 3.12.5)
 - pip
 
 ### Setup
 
 1. Clone this repository:
-   ```
-   git clone https://github.com/yourusername/email-ai-agent-webhook.git
-   cd email-ai-agent-webhook
+   ```bash
+   git clone https://github.com/SonicDMG/email_agent_interface.git
+   cd email_agent_interface
    ```
 
 2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
    ```
-   pip install fastapi uvicorn requests json-repair
+
+### Local Development with ngrok
+
+To test the webhook locally, you'll need to make your local server accessible to SendGrid. We recommend using [ngrok](https://ngrok.com/) for this:
+
+1. Install ngrok:
+   ```bash
+   # Using Homebrew (macOS)
+   brew install ngrok
+
+   # Using npm
+   npm install ngrok -g
+
+   # Or download directly from https://ngrok.com/download
    ```
 
-3. Configure the Langflow endpoint:
-   Edit `webhook_handler.py` and update the `LANGFLOW_API_URL` variable to point to your Langflow instance.
+2. Start your FastAPI server:
+   ```bash
+   python -m uvicorn webhook_handler:app --reload --port 8000
+   ```
 
-## Usage
+3. In a new terminal, create an ngrok tunnel:
+   ```bash
+   ngrok http 8000
+   ```
 
-### Running the Server
+4. Copy your ngrok URL (looks like `https://xxxx-xx-xx-xxx-xx.ngrok.io`)
 
-Start the webhook handler:
+5. Configure SendGrid:
+   - Go to [SendGrid's Inbound Parse Settings](https://app.sendgrid.com/settings/parse)
+   - Add a new domain or subdomain
+   - Set the URL to your ngrok URL + `/webhook` (e.g., `https://xxxx-xx-xx-xxx-xx.ngrok.io/webhook`)
+   - Save the settings
 
-```
-python webhook_handler.py
-```
+Now emails sent to your configured SendGrid address will be forwarded to your local development server through ngrok.
 
-The server will run on port 8000 by default.
+![Ngrok Webhook Example](docs/images/ngrok_webhook_example.png)
+*SendGrid configuration showing the webhook URL (`/webhook` endpoint) for local testing*
 
-### Exposing to the Internet
+![Ngrok Console](docs/images/ngrok_console.png)
+*Ngrok console displaying the forwarded traffic to your local webhook endpoint*
 
-To receive webhooks from GitHub, you'll need to expose your server to the internet. You can use ngrok for development:
+The images above show:
+1. SendGrid's webhook configuration pointing to your ngrok URL + `/webhook`
+2. Ngrok's console showing the incoming webhook requests being forwarded to your local server
 
-```
-ngrok http 8000
-```
+Notice how the SendGrid Inbound Parse webhook address matches the address generated by ngrok, ensuring that incoming emails are correctly forwarded to your local development environment.
 
-Use the ngrok URL as your webhook endpoint in your GitHub notification settings.
-
-### Health Check
-
-The server provides a health check endpoint at `/health` that you can use to verify it's running correctly.
-
-## Troubleshooting
-
-- Check the `webhook.log` file for detailed logs
-- If you're having JSON parsing issues, ensure the `json_repair` library is installed
-- For webhook delivery problems, verify your ngrok tunnel is active and the URL is correctly configured
-
-## License
-
-MIT License
-
-Copyright (c) 2025 David Jones-Gilardi
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files.
+> **Note**: The free tier of ngrok will generate a new URL each time you restart the tunnel. You'll need to update your SendGrid webhook URL accordingly. For persistent URLs, consider upgrading to a paid ngrok plan.
