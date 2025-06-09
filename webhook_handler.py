@@ -37,13 +37,13 @@ LOG_LEVEL = getattr(logging, LOG_LEVEL_STR, logging.INFO)
 
 # Configure logging
 logging.basicConfig(
-    level=LOG_LEVEL, # Use the level from env var
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO,
     handlers=[
-        logging.FileHandler("webhook.log"),
-        logging.StreamHandler(sys.stdout)
+        logging.StreamHandler(),
+        logging.FileHandler("/tmp/webhook.log")  # using /tmp as writable location
     ]
 )
+
 logger = logging.getLogger("webhook_handler")
 # Log the effective logging level
 logger.info("Logging level set to: %s", logging.getLevelName(LOG_LEVEL))
