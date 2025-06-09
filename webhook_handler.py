@@ -30,17 +30,15 @@ from text_utils import clean_text
 # Load environment variables
 load_dotenv()
 
-# Configure logging level based on environment variable
+# Configure logging
+
 LOG_LEVEL_STR = os.getenv("LOG_LEVEL", "INFO").upper()
-# Map string level to logging constant, default to INFO if invalid
 LOG_LEVEL = getattr(logging, LOG_LEVEL_STR, logging.INFO)
 
-# Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=LOG_LEVEL,
     handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler("/tmp/webhook.log")  # using /tmp as writable location
+        logging.StreamHandler(sys.stdout)
     ]
 )
 
